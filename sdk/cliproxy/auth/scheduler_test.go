@@ -446,38 +446,6 @@ func TestManagerPluginSchedulerSelectsAuthID(t *testing.T) {
 	}
 }
 
-func TestManagerPluginSchedulerReceivesEligibleAccountsAcrossPriorities(t *testing.T) {
-	manager := NewManager(nil, &RoundRobinSelector{}, nil)
-	manager.executors["gemini"] = schedulerTestExecutor{}
-	for _, candidate := range []*Auth{
-		{ID: "outside-high", Provider: "gemini", Attributes: map[string]string{"priority": "100"}},
-		{ID: "pool-low", Provider: "gemini", Attributes: map[string]string{"priority": "10"}},
-	} {
-		if _, errRegister := manager.Register(context.Background(), candidate); errRegister != nil {
-			t.Fatalf("Register(%s) error = %v", candidate.ID, errRegister)
-		}
-	}
-
-	scheduler := &fakePluginScheduler{
-		handled: true,
-		pick: func(_ context.Context, req pluginapi.SchedulerPickRequest) (pluginapi.SchedulerPickResponse, bool, error) {
-			if len(req.Candidates) != 2 {
-				t.Fatalf("plugin candidates = %#v, want both priority tiers", req.Candidates)
-			}
-			return pluginapi.SchedulerPickResponse{Handled: true, AuthID: "pool-low"}, true, nil
-		},
-	}
-	manager.SetPluginScheduler(scheduler)
-
-	got, _, errPick := manager.pickNext(context.Background(), "gemini", "", cliproxyexecutor.Options{}, nil)
-	if errPick != nil {
-		t.Fatalf("pickNext() error = %v", errPick)
-	}
-	if got == nil || got.ID != "pool-low" {
-		t.Fatalf("pickNext() auth = %#v, want pool-low", got)
-	}
-}
-
 func TestManagerSelectAuthByKindSkipsAPIKey(t *testing.T) {
 	manager := NewManager(nil, &RoundRobinSelector{}, nil)
 	manager.executors["codex"] = schedulerTestExecutor{}

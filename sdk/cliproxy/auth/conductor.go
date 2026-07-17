@@ -1388,19 +1388,20 @@ func finishForceMappedStreamChunks(rewriter *StreamRewriter) []byte {
 	return rewriter.Finish()
 }
 
-func (m *Manager) unblockedAuthsForRouteModel(auths []*Auth, provider, routeModel string, now time.Time) ([]*Auth, error) {
+func (m *Manager) availableAuthsForRouteModel(auths []*Auth, provider, routeModel string, now time.Time) ([]*Auth, error) {
 	if len(auths) == 0 {
 		return nil, &Error{Code: "auth_not_found", Message: "no auth candidates"}
 	}
 
-	available := make([]*Auth, 0, len(auths))
+	availableByPriority := make(map[int][]*Auth)
 	cooldownCount := 0
 	var earliest time.Time
 	for _, candidate := range auths {
 		checkModel := m.selectionModelForAuth(candidate, routeModel)
 		blocked, reason, next := isAuthBlockedForModel(candidate, checkModel, now)
 		if !blocked {
-			available = append(available, candidate)
+			priority := authPriority(candidate)
+			availableByPriority[priority] = append(availableByPriority[priority], candidate)
 			continue
 		}
 		if reason == blockReasonCooldown {
@@ -1411,7 +1412,7 @@ func (m *Manager) unblockedAuthsForRouteModel(auths []*Auth, provider, routeMode
 		}
 	}
 
-	if len(available) == 0 {
+	if len(availableByPriority) == 0 {
 		if cooldownCount == len(auths) && !earliest.IsZero() {
 			providerForError := provider
 			if providerForError == "mixed" {
@@ -1425,32 +1426,21 @@ func (m *Manager) unblockedAuthsForRouteModel(auths []*Auth, provider, routeMode
 		}
 		return nil, &Error{Code: "auth_unavailable", Message: "no auth available"}
 	}
-	return available, nil
-}
-
-func (m *Manager) availableAuthsForRouteModel(auths []*Auth, provider, routeModel string, now time.Time) ([]*Auth, error) {
-	available, err := m.unblockedAuthsForRouteModel(auths, provider, routeModel, now)
-	if err != nil {
-		return nil, err
-	}
 
 	bestPriority := 0
 	found := false
-	availableByPriority := make(map[int][]*Auth)
-	for _, candidate := range available {
-		priority := authPriority(candidate)
-		availableByPriority[priority] = append(availableByPriority[priority], candidate)
+	for priority := range availableByPriority {
 		if !found || priority > bestPriority {
 			bestPriority = priority
 			found = true
 		}
 	}
 
-	best := availableByPriority[bestPriority]
-	if len(best) > 1 {
-		sort.Slice(best, func(i, j int) bool { return best[i].ID < best[j].ID })
+	available := availableByPriority[bestPriority]
+	if len(available) > 1 {
+		sort.Slice(available, func(i, j int) bool { return available[i].ID < available[j].ID })
 	}
-	return best, nil
+	return available, nil
 }
 
 func selectionArgForSelector(selector Selector, routeModel string) string {
@@ -4645,13 +4635,7 @@ func (m *Manager) pickNextLegacy(ctx context.Context, provider, model string, op
 		m.mu.RUnlock()
 		return nil, nil, &Error{Code: "auth_not_found", Message: "no auth available"}
 	}
-	var available []*Auth
-	var errAvailable error
-	if pluginScheduler != nil {
-		available, errAvailable = m.unblockedAuthsForRouteModel(candidates, provider, model, time.Now())
-	} else {
-		available, errAvailable = m.availableAuthsForRouteModel(candidates, provider, model, time.Now())
-	}
+	available, errAvailable := m.availableAuthsForRouteModel(candidates, provider, model, time.Now())
 	if errAvailable != nil {
 		m.mu.RUnlock()
 		return nil, nil, errAvailable
@@ -4861,13 +4845,7 @@ func (m *Manager) pickNextMixedLegacy(ctx context.Context, providers []string, m
 		m.mu.RUnlock()
 		return nil, nil, "", &Error{Code: "auth_not_found", Message: "no auth available"}
 	}
-	var available []*Auth
-	var errAvailable error
-	if pluginScheduler != nil {
-		available, errAvailable = m.unblockedAuthsForRouteModel(candidates, "mixed", model, time.Now())
-	} else {
-		available, errAvailable = m.availableAuthsForRouteModel(candidates, "mixed", model, time.Now())
-	}
+	available, errAvailable := m.availableAuthsForRouteModel(candidates, "mixed", model, time.Now())
 	if errAvailable != nil {
 		m.mu.RUnlock()
 		return nil, nil, "", errAvailable
