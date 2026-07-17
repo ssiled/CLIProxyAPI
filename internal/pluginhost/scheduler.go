@@ -78,7 +78,7 @@ func normalizeSchedulerResponse(resp pluginapi.SchedulerPickResponse, req plugin
 	hasAuthID := resp.AuthID != ""
 	hasDelegate := resp.DelegateBuiltin != ""
 	if !hasAuthID && !hasDelegate {
-		return pluginapi.SchedulerPickResponse{}, false, "missing auth id or delegate"
+		return resp, true, ""
 	}
 	if hasAuthID {
 		if !schedulerCandidateExists(req.Candidates, resp.AuthID) {

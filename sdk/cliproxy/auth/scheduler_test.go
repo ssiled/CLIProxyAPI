@@ -679,6 +679,31 @@ func TestManagerPluginSchedulerErrorStopsPick(t *testing.T) {
 	}
 }
 
+func TestManagerPluginSchedulerHandledEmptyStopsPick(t *testing.T) {
+	manager := NewManager(nil, &FillFirstSelector{}, nil)
+	manager.executors["gemini"] = schedulerTestExecutor{}
+	if _, errRegister := manager.Register(context.Background(), &Auth{ID: "auth-b", Provider: "gemini"}); errRegister != nil {
+		t.Fatalf("Register(auth-b) error = %v", errRegister)
+	}
+	if _, errRegister := manager.Register(context.Background(), &Auth{ID: "auth-a", Provider: "gemini"}); errRegister != nil {
+		t.Fatalf("Register(auth-a) error = %v", errRegister)
+	}
+	scheduler := &fakePluginScheduler{
+		resp:    pluginapi.SchedulerPickResponse{Handled: true},
+		handled: true,
+	}
+	manager.SetPluginScheduler(scheduler)
+
+	got, _, errPick := manager.pickNext(context.Background(), "gemini", "", cliproxyexecutor.Options{}, nil)
+	if got != nil {
+		t.Fatalf("pickNext() auth = %v, want nil", got)
+	}
+	var authErr *Error
+	if !errors.As(errPick, &authErr) || authErr.Code != "auth_unavailable" || authErr.HTTPStatus != http.StatusServiceUnavailable {
+		t.Fatalf("pickNext() error = %#v, want auth_unavailable", errPick)
+	}
+}
+
 func TestManagerPluginSchedulerFallsBackWhenUnhandledOrUnknown(t *testing.T) {
 	for _, tc := range []struct {
 		name    string

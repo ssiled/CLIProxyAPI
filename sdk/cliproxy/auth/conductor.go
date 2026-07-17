@@ -1655,6 +1655,10 @@ func (m *Manager) pickViaPluginScheduler(ctx context.Context, scheduler PluginSc
 		return selected, true, nil
 	}
 
+	if strings.TrimSpace(resp.AuthID) == "" && strings.TrimSpace(resp.DelegateBuiltin) == "" {
+		return nil, true, &Error{Code: "auth_unavailable", Message: "no auth available", HTTPStatus: http.StatusServiceUnavailable, Retryable: true}
+	}
+
 	strategy, okStrategy := builtinSchedulerStrategy(resp.DelegateBuiltin)
 	if !okStrategy {
 		return nil, false, nil

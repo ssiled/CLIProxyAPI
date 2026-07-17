@@ -135,10 +135,6 @@ func TestHostPickAuthInvalidResponseFallsBack(t *testing.T) {
 			name: "unknown delegate",
 			resp: pluginapi.SchedulerPickResponse{Handled: true, DelegateBuiltin: "unknown"},
 		},
-		{
-			name: "handled without decision",
-			resp: pluginapi.SchedulerPickResponse{Handled: true},
-		},
 	}
 
 	for _, tt := range tests {
@@ -158,6 +154,26 @@ func TestHostPickAuthInvalidResponseFallsBack(t *testing.T) {
 				t.Fatal("PickAuth() handled = true, want false")
 			}
 		})
+	}
+}
+
+func TestHostPickAuthHandledEmptySuppressesBuiltin(t *testing.T) {
+	host := newHostWithRecords(capabilityRecord{
+		id: "scheduler",
+		plugin: pluginapi.Plugin{Capabilities: pluginapi.Capabilities{Scheduler: schedulerFunc(func(context.Context, pluginapi.SchedulerPickRequest) (pluginapi.SchedulerPickResponse, error) {
+			return pluginapi.SchedulerPickResponse{Handled: true}, nil
+		})}},
+	})
+
+	resp, handled, errPick := host.PickAuth(context.Background(), schedulerRequest("auth-1"))
+	if errPick != nil {
+		t.Fatalf("PickAuth() error = %v, want nil", errPick)
+	}
+	if !handled {
+		t.Fatal("PickAuth() handled = false, want true")
+	}
+	if resp.AuthID != "" || resp.DelegateBuiltin != "" {
+		t.Fatalf("PickAuth() response = %#v, want empty handled response", resp)
 	}
 }
 

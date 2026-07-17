@@ -517,7 +517,9 @@ type SchedulerPickResponse struct {
 	AuthID string
 	// DelegateBuiltin asks the host to use a named built-in scheduler.
 	DelegateBuiltin string
-	// Handled reports whether the plugin made a scheduling decision.
+	// Handled reports whether the plugin made a scheduling decision. When true with
+	// an empty AuthID and DelegateBuiltin, the host stops selection without falling
+	// back to the built-in scheduler.
 	Handled bool
 }
 
