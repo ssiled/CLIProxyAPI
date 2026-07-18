@@ -30,9 +30,6 @@ type Record struct {
 	AuthIndex    string
 	AuthType     string
 	Source       string
-	// Additional marks usage emitted for an auxiliary model within the same
-	// upstream request. It must not release an account concurrency slot.
-	Additional bool
 	// ReasoningEffort stores the translated upstream thinking level for request event logs.
 	ReasoningEffort string
 	// ServiceTier stores the client-requested service tier.

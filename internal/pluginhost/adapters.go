@@ -1826,7 +1826,6 @@ func (a *usageAdapter) HandleUsage(ctx context.Context, record coreusage.Record)
 		AuthID:          record.AuthID,
 		AuthIndex:       record.AuthIndex,
 		AuthType:        record.AuthType,
-		Additional:      record.Additional,
 		Source:          record.Source,
 		ReasoningEffort: record.ReasoningEffort,
 		ServiceTier:     record.ServiceTier,

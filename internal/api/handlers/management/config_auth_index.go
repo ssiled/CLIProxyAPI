@@ -10,37 +10,31 @@ import (
 
 type geminiKeyWithAuthIndex struct {
 	config.GeminiKey
-	AuthID    string `json:"auth-id,omitempty"`
 	AuthIndex string `json:"auth-index,omitempty"`
 }
 
 type claudeKeyWithAuthIndex struct {
 	config.ClaudeKey
-	AuthID    string `json:"auth-id,omitempty"`
 	AuthIndex string `json:"auth-index,omitempty"`
 }
 
 type codexKeyWithAuthIndex struct {
 	config.CodexKey
-	AuthID    string `json:"auth-id,omitempty"`
 	AuthIndex string `json:"auth-index,omitempty"`
 }
 
 type xaiKeyWithAuthIndex struct {
 	config.XAIKey
-	AuthID    string `json:"auth-id,omitempty"`
 	AuthIndex string `json:"auth-index,omitempty"`
 }
 
 type vertexCompatKeyWithAuthIndex struct {
 	config.VertexCompatKey
-	AuthID    string `json:"auth-id,omitempty"`
 	AuthIndex string `json:"auth-index,omitempty"`
 }
 
 type openAICompatibilityAPIKeyWithAuthIndex struct {
 	config.OpenAICompatibilityAPIKey
-	AuthID    string `json:"auth-id,omitempty"`
 	AuthIndex string `json:"auth-index,omitempty"`
 }
 
@@ -54,7 +48,6 @@ type openAICompatibilityWithAuthIndex struct {
 	Models         []config.OpenAICompatibilityModel        `json:"models,omitempty"`
 	Headers        map[string]string                        `json:"headers,omitempty"`
 	DisableCooling bool                                     `json:"disable-cooling,omitempty"`
-	AuthID         string                                   `json:"auth-id,omitempty"`
 	AuthIndex      string                                   `json:"auth-index,omitempty"`
 }
 
@@ -106,16 +99,13 @@ func (h *Handler) geminiKeysWithAuthIndex() []geminiKeyWithAuthIndex {
 	out := make([]geminiKeyWithAuthIndex, len(h.cfg.GeminiKey))
 	for i := range h.cfg.GeminiKey {
 		entry := h.cfg.GeminiKey[i]
-		authID := ""
 		authIndex := ""
 		if key := strings.TrimSpace(entry.APIKey); key != "" {
 			id, _ := idGen.Next("gemini:apikey", key, entry.BaseURL)
-			authID = id
 			authIndex = liveIndexByID[id]
 		}
 		out[i] = geminiKeyWithAuthIndex{
 			GeminiKey: entry,
-			AuthID:    authID,
 			AuthIndex: authIndex,
 		}
 	}
@@ -138,16 +128,13 @@ func (h *Handler) interactionsKeysWithAuthIndex() []geminiKeyWithAuthIndex {
 	out := make([]geminiKeyWithAuthIndex, len(h.cfg.InteractionsKey))
 	for i := range h.cfg.InteractionsKey {
 		entry := h.cfg.InteractionsKey[i]
-		authID := ""
 		authIndex := ""
 		if key := strings.TrimSpace(entry.APIKey); key != "" {
 			id, _ := idGen.Next("gemini-interactions:apikey", key, entry.BaseURL)
-			authID = id
 			authIndex = liveIndexByID[id]
 		}
 		out[i] = geminiKeyWithAuthIndex{
 			GeminiKey: entry,
-			AuthID:    authID,
 			AuthIndex: authIndex,
 		}
 	}
@@ -170,16 +157,13 @@ func (h *Handler) claudeKeysWithAuthIndex() []claudeKeyWithAuthIndex {
 	out := make([]claudeKeyWithAuthIndex, len(h.cfg.ClaudeKey))
 	for i := range h.cfg.ClaudeKey {
 		entry := h.cfg.ClaudeKey[i]
-		authID := ""
 		authIndex := ""
 		if key := strings.TrimSpace(entry.APIKey); key != "" {
 			id, _ := idGen.Next("claude:apikey", key, entry.BaseURL)
-			authID = id
 			authIndex = liveIndexByID[id]
 		}
 		out[i] = claudeKeyWithAuthIndex{
 			ClaudeKey: entry,
-			AuthID:    authID,
 			AuthIndex: authIndex,
 		}
 	}
@@ -202,16 +186,13 @@ func (h *Handler) codexKeysWithAuthIndex() []codexKeyWithAuthIndex {
 	out := make([]codexKeyWithAuthIndex, len(h.cfg.CodexKey))
 	for i := range h.cfg.CodexKey {
 		entry := h.cfg.CodexKey[i]
-		authID := ""
 		authIndex := ""
 		if key := strings.TrimSpace(entry.APIKey); key != "" {
 			id, _ := idGen.Next("codex:apikey", key, entry.BaseURL)
-			authID = id
 			authIndex = liveIndexByID[id]
 		}
 		out[i] = codexKeyWithAuthIndex{
 			CodexKey:  entry,
-			AuthID:    authID,
 			AuthIndex: authIndex,
 		}
 	}
@@ -234,16 +215,13 @@ func (h *Handler) xaiKeysWithAuthIndex() []xaiKeyWithAuthIndex {
 	out := make([]xaiKeyWithAuthIndex, len(h.cfg.XAIKey))
 	for i := range h.cfg.XAIKey {
 		entry := h.cfg.XAIKey[i]
-		authID := ""
 		authIndex := ""
 		if key := strings.TrimSpace(entry.APIKey); key != "" {
 			id, _ := idGen.Next("xai:apikey", key, entry.BaseURL)
-			authID = id
 			authIndex = liveIndexByID[id]
 		}
 		out[i] = xaiKeyWithAuthIndex{
 			XAIKey:    entry,
-			AuthID:    authID,
 			AuthIndex: authIndex,
 		}
 	}
@@ -270,7 +248,6 @@ func (h *Handler) vertexCompatKeysWithAuthIndex() []vertexCompatKeyWithAuthIndex
 		authIndex := liveIndexByID[id]
 		out[i] = vertexCompatKeyWithAuthIndex{
 			VertexCompatKey: entry,
-			AuthID:          id,
 			AuthIndex:       authIndex,
 		}
 	}
@@ -313,7 +290,6 @@ func (h *Handler) openAICompatibilityWithAuthIndex() []openAICompatibilityWithAu
 		}
 		if len(entry.APIKeyEntries) == 0 {
 			id, _ := idGen.Next(idKind, entry.BaseURL)
-			response.AuthID = id
 			response.AuthIndex = liveIndexByID[id]
 		} else {
 			response.APIKeyEntries = make([]openAICompatibilityAPIKeyWithAuthIndex, len(entry.APIKeyEntries))
@@ -322,7 +298,6 @@ func (h *Handler) openAICompatibilityWithAuthIndex() []openAICompatibilityWithAu
 				id, _ := idGen.Next(idKind, apiKeyEntry.APIKey, entry.BaseURL, apiKeyEntry.ProxyURL)
 				response.APIKeyEntries[j] = openAICompatibilityAPIKeyWithAuthIndex{
 					OpenAICompatibilityAPIKey: apiKeyEntry,
-					AuthID:                    id,
 					AuthIndex:                 liveIndexByID[id],
 				}
 			}
