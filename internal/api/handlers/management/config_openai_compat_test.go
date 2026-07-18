@@ -41,6 +41,9 @@ func TestGetOpenAICompatIncludesDisableCooling(t *testing.T) {
 	var body struct {
 		OpenAICompatibility []struct {
 			DisableCooling *bool `json:"disable-cooling"`
+			APIKeyEntries  []struct {
+				AuthID string `json:"auth-id"`
+			} `json:"api-key-entries"`
 		} `json:"openai-compatibility"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
@@ -51,5 +54,8 @@ func TestGetOpenAICompatIncludesDisableCooling(t *testing.T) {
 	}
 	if body.OpenAICompatibility[0].DisableCooling == nil || !*body.OpenAICompatibility[0].DisableCooling {
 		t.Fatalf("expected disable-cooling to be present and true, got %#v", body.OpenAICompatibility[0].DisableCooling)
+	}
+	if len(body.OpenAICompatibility[0].APIKeyEntries) != 1 || body.OpenAICompatibility[0].APIKeyEntries[0].AuthID == "" {
+		t.Fatalf("expected scheduler auth id for provider API key, got %#v", body.OpenAICompatibility[0].APIKeyEntries)
 	}
 }

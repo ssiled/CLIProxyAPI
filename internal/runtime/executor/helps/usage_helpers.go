@@ -181,7 +181,9 @@ func (r *UsageReporter) buildAdditionalModelRecord(model string, detail usage.De
 	if !hasNonZeroTokenUsage(detail) {
 		return usage.Record{}, false
 	}
-	return r.buildRecordForModel(model, detail, false, usage.Failure{}), true
+	record := r.buildRecordForModel(model, detail, false, usage.Failure{})
+	record.Additional = true
+	return record, true
 }
 
 func (r *UsageReporter) PublishFailure(ctx context.Context, errs ...error) {

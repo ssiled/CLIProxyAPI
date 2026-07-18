@@ -1272,6 +1272,8 @@ type UsageRecord struct {
 	AuthIndex string
 	// AuthType identifies the credential type.
 	AuthType string
+	// Additional marks auxiliary model usage from the same upstream request.
+	Additional bool
 	// Source identifies the request source or integration.
 	Source string
 	// ReasoningEffort records the requested reasoning effort.
